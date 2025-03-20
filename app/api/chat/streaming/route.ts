@@ -10,7 +10,8 @@ import {
 
 // Define the expected request body structure
 interface ChatStreamRequestBody {
-  messages: {
+  message: string;
+  messages?: {
     role: 'system' | 'user' | 'assistant';
     content: string;
   }[];
@@ -25,24 +26,33 @@ interface ChatStreamRequestBody {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json() as ChatStreamRequestBody;
-    const { messages, useRag = true, systemPrompt = DEFAULT_SYSTEM_PROMPT } = body;
+    const { 
+      message, 
+      messages = [], 
+      useRag = true, 
+      systemPrompt = DEFAULT_SYSTEM_PROMPT 
+    } = body;
 
     // Validate request body
-    if (!messages || !Array.isArray(messages) || messages.length === 0) {
+    if (!message && messages.length === 0) {
       return new Response(
-        JSON.stringify({ error: 'Messages array is required and must not be empty' }), 
+        JSON.stringify({ error: 'Message or messages array is required' }), 
         { status: 400 }
       );
     }
 
+    // Prepare messages array for Ollama
+    // If messages array is provided, use it, otherwise create from single message
+    let ollamaMessages = messages.length > 0 
+      ? [...messages] 
+      : [{ role: 'user', content: message }];
+    
     // Get the last user message for RAG context retrieval
-    const lastUserMessage = [...messages].reverse().find(m => m.role === 'user')?.content;
+    const lastUserMessage = message || 
+      [...ollamaMessages].reverse().find(m => m.role === 'user')?.content || '';
     
     // Initialize Ollama client
     const ollama = getOllamaClient();
-    
-    // Prepare messages array for Ollama
-    let ollamaMessages = [...messages];
     
     // Add RAG context if enabled
     if (useRag && lastUserMessage) {
