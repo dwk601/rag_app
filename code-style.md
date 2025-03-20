@@ -3,7 +3,7 @@
 ## Planning Steps
 - [✅] Configure environment variables for Ollama and Weaviate connections
 - [✅] Create Weaviate client setup for vector database interaction
-- [ ] Design schema for text and image data in Weaviate
+- [✅] Design schema for text and image data in Weaviate
 - [ ] Implement API routes for Ollama chat completion
 - [ ] Create RAG utilities for text retrieval and embedding
 - [ ] Build image processing and embedding capabilities
@@ -43,7 +43,9 @@
 .
 ├── app
 │   ├── api
-│   │   └── health
+│   │   ├── health
+│   │   │   └── route.ts
+│   │   └── schema
 │   │       └── route.ts
 │   ├── favicon.ico
 │   ├── globals.css
@@ -54,7 +56,8 @@
 │   ├── health.ts
 │   ├── ollama-client.ts
 │   ├── utils.ts
-│   └── weaviate-client.ts
+│   ├── weaviate-client.ts
+│   └── weaviate-schema.ts
 ├── public
 │   ├── file.svg
 │   ├── globe.svg

@@ -1,5 +1,6 @@
 import { isWeaviateReady } from './weaviate-client';
 import { isOllamaReady } from './ollama-client';
+import { SCHEMA_CLASSES } from './weaviate-schema';
 
 /**
  * Interface for service health status
@@ -7,6 +8,11 @@ import { isOllamaReady } from './ollama-client';
 export interface ServiceHealth {
   weaviate: boolean;
   ollama: boolean;
+  schema: {
+    initialized: boolean;
+    textDocumentExists: boolean;
+    imageDocumentExists: boolean;
+  };
   allHealthy: boolean;
 }
 
@@ -18,9 +24,33 @@ export async function checkServicesHealth(): Promise<ServiceHealth> {
   const weaviateHealth = await isWeaviateReady();
   const ollamaHealth = await isOllamaReady();
   
+  let schemaStatus = {
+    initialized: false,
+    textDocumentExists: false,
+    imageDocumentExists: false
+  };
+  
+  // Check schema status if Weaviate is healthy
+  if (weaviateHealth) {
+    try {
+      const client = (await import('./weaviate-client')).getWeaviateClient();
+      const schema = await client.schema.getter().do();
+      const existingClasses = schema.classes?.map(c => c.class) || [];
+      
+      schemaStatus.textDocumentExists = existingClasses.includes(SCHEMA_CLASSES.TEXT_DOCUMENT);
+      schemaStatus.imageDocumentExists = existingClasses.includes(SCHEMA_CLASSES.IMAGE_DOCUMENT);
+      schemaStatus.initialized = 
+        schemaStatus.textDocumentExists && 
+        schemaStatus.imageDocumentExists;
+    } catch (error) {
+      console.error('Error checking schema health:', error);
+    }
+  }
+  
   return {
     weaviate: weaviateHealth,
     ollama: ollamaHealth,
-    allHealthy: weaviateHealth && ollamaHealth
+    schema: schemaStatus,
+    allHealthy: weaviateHealth && ollamaHealth && schemaStatus.initialized
   };
 }

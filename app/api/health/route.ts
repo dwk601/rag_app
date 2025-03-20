@@ -15,6 +15,11 @@ export async function GET(request: NextRequest) {
       services: {
         weaviate: health.weaviate ? 'healthy' : 'unavailable',
         ollama: health.ollama ? 'healthy' : 'unavailable',
+        schema: health.schema.initialized ? 'initialized' : 'not initialized',
+      },
+      schemaDetails: {
+        textDocumentExists: health.schema.textDocumentExists,
+        imageDocumentExists: health.schema.imageDocumentExists
       }
     }, {
       status: health.allHealthy ? 200 : 503
