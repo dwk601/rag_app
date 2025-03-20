@@ -79,6 +79,12 @@ Follow these rules when you write code:
 │   │   │   ├── streaming
 │   │   │   │   └── route.ts
 │   │   │   └── route.ts
+│   │   ├── documents
+│   │   │   ├── images
+│   │   │   │   └── route.ts
+│   │   │   ├── text
+│   │   │   │   └── route.ts
+│   │   │   └── route.ts
 │   │   ├── health
 │   │   │   └── route.ts
 │   │   └── schema
@@ -90,6 +96,7 @@ Follow these rules when you write code:
 ├── lib
 │   ├── config.ts
 │   ├── health.ts
+│   ├── image-processing.ts
 │   ├── ollama-client.ts
 │   ├── rag-utils.ts
 │   ├── utils.ts
