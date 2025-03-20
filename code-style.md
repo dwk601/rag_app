@@ -93,6 +93,12 @@ Follow these rules when you write code:
 │   ├── globals.css
 │   ├── layout.tsx
 │   └── page.tsx
+├── components
+│   └── ui
+│       ├── avatar.tsx
+│       ├── button.tsx
+│       ├── tabs.tsx
+│       └── textarea.tsx
 ├── lib
 │   ├── config.ts
 │   ├── health.ts
