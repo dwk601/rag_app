@@ -97,6 +97,7 @@ Follow these rules when you write code:
 │   ├── chat
 │   │   ├── ChatContainer.tsx
 │   │   ├── ChatMessage.tsx
+│   │   ├── ConversationSidebar.tsx
 │   │   ├── MessageInput.tsx
 │   │   └── MessageList.tsx
 │   └── ui
@@ -104,6 +105,8 @@ Follow these rules when you write code:
 │       ├── button.tsx
 │       ├── tabs.tsx
 │       └── textarea.tsx
+├── hooks
+│   └── useChatContext.tsx
 ├── lib
 │   ├── config.ts
 │   ├── health.ts
