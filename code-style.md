@@ -39,7 +39,7 @@ Follow these rules when you write code:
 - [✅] Implement API routes for Ollama chat completion
 - [✅] Create RAG utilities for text retrieval and embedding
 - [✅] Build image processing and embedding capabilities
-- [ ] Develop the chat UI components with Shadcn
+- [✅] Develop the chat UI components with Shadcn
 - [ ] Implement chat history and message state management
 - [ ] Create file upload functionality for text and images
 - [ ] Connect the frontend to backend services
