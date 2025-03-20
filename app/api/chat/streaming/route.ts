@@ -74,14 +74,14 @@ export async function POST(request: NextRequest) {
 
     // Start streaming response from Ollama
     try {
-      const stream = await ollama.stream(ollamaMessages);
+      const ollamaStream = await ollama.stream(ollamaMessages);
 
       // Process each chunk as it comes in
       (async () => {
         try {
-          for await (const chunk of stream) {
+          for await (const chunk of ollamaStream) {
             // Encode and write the chunk to the response stream
-            const text = chunk.content;
+            const text = chunk; // Chunk is already a string
             await writer.write(encoder.encode(`data: ${JSON.stringify({ text })}\n\n`));
           }
           // Send the end marker
