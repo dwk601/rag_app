@@ -40,28 +40,36 @@
    - Context + user message sent to Ollama → response streamed back to UI
 
 ## Project Structure
-C:\Users\dongo\Documents\windows_code\rag_app\app               
-C:\Users\dongo\Documents\windows_code\rag_app\lib               
-C:\Users\dongo\Documents\windows_code\rag_app\public            
-C:\Users\dongo\Documents\windows_code\rag_app\code-style.md     
-C:\Users\dongo\Documents\windows_code\rag_app\components.json   
-C:\Users\dongo\Documents\windows_code\rag_app\docker-compose.yml
-C:\Users\dongo\Documents\windows_code\rag_app\eslint.config.mjs 
-C:\Users\dongo\Documents\windows_code\rag_app\next-env.d.ts     
-C:\Users\dongo\Documents\windows_code\rag_app\next.config.ts    
-C:\Users\dongo\Documents\windows_code\rag_app\package-lock.json 
-C:\Users\dongo\Documents\windows_code\rag_app\package.json      
-C:\Users\dongo\Documents\windows_code\rag_app\postcss.config.mjs
-C:\Users\dongo\Documents\windows_code\rag_app\README.md         
-C:\Users\dongo\Documents\windows_code\rag_app\tailwind.config.ts
-C:\Users\dongo\Documents\windows_code\rag_app\tsconfig.json     
-C:\Users\dongo\Documents\windows_code\rag_app\app\favicon.ico   
-C:\Users\dongo\Documents\windows_code\rag_app\app\globals.css   
-C:\Users\dongo\Documents\windows_code\rag_app\app\layout.tsx    
-C:\Users\dongo\Documents\windows_code\rag_app\app\page.tsx      
-C:\Users\dongo\Documents\windows_code\rag_app\lib\utils.ts      
-C:\Users\dongo\Documents\windows_code\rag_app\public\file.svg   
-C:\Users\dongo\Documents\windows_code\rag_app\public\globe.svg  
-C:\Users\dongo\Documents\windows_code\rag_app\public\next.svg   
-C:\Users\dongo\Documents\windows_code\rag_app\public\vercel.svg 
-C:\Users\dongo\Documents\windows_code\rag_app\public\window.svg
+.
+├── app
+│   ├── api
+│   │   └── health
+│   │       └── route.ts
+│   ├── favicon.ico
+│   ├── globals.css
+│   ├── layout.tsx
+│   └── page.tsx
+├── lib
+│   ├── config.ts
+│   ├── health.ts
+│   ├── ollama-client.ts
+│   ├── utils.ts
+│   └── weaviate-client.ts
+├── public
+│   ├── file.svg
+│   ├── globe.svg
+│   ├── next.svg
+│   ├── vercel.svg
+│   └── window.svg
+├── README.md
+├── code-style.md
+├── components.json
+├── docker-compose.yml
+├── eslint.config.mjs
+├── next-env.d.ts
+├── next.config.ts
+├── package-lock.json
+├── package.json
+├── postcss.config.mjs
+├── tailwind.config.ts
+└── tsconfig.json
