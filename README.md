@@ -1,36 +1,103 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# RAG-based AI Chat Application with Ollama and Weaviate
+
+An intelligent chat application leveraging Retrieval-Augmented Generation (RAG) with Ollama for LLM capabilities and Weaviate as the vector database. Built with Next.js 15.1, TypeScript, and modern UI components.
+
+## Features
+
+- 🤖 AI-powered chat interface with context-aware responses
+- 📚 Document and image upload capability with vector storage
+- 🔍 Smart context retrieval using RAG architecture
+- 🌊 Integration with Weaviate for efficient vector search
+- 🔄 Real-time streaming responses
+- 🎨 Modern UI with Shadcn components and TailwindCSS
+
+## Tech Stack
+
+- Next.js 15.1
+- TypeScript
+- TailwindCSS v3
+- Shadcn UI v2.3.0
+- Ollama for LLM
+- Weaviate vector database
+
+## Prerequisites
+
+- Node.js 18.0 or later
+- Ollama running locally or accessible endpoint
+- Weaviate instance (local or cloud)
+- Docker and Docker Compose (for running Weaviate locally)
 
 ## Getting Started
 
-First, run the development server:
-
+1. Clone the repository
+2. Install dependencies:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+3. Set up environment variables:
+```bash
+cp .env.example .env.local
+```
+Configure the following variables:
+- OLLAMA_API_URL
+- WEAVIATE_URL
+- WEAVIATE_API_KEY (if using cloud instance)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+4. Start the development server:
+```bash
+npm run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+5. Start Weaviate (if running locally):
+```bash
+docker-compose up -d
+```
 
-## Learn More
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the application.
 
-To learn more about Next.js, take a look at the following resources:
+## Project Structure
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+.
+├── app/                  # Next.js app directory
+│   ├── api/             # API routes
+│   └── page.tsx         # Main chat interface
+├── components/          # React components
+│   └── ui/             # Shadcn UI components
+├── lib/                 # Utility functions and clients
+└── public/             # Static assets
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Architecture
 
-## Deploy on Vercel
+1. **Frontend Layer**:
+   - Chat interface with message history
+   - File upload component for text/images
+   - Response streaming display
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+2. **API Layer**:
+   - Chat completion endpoints
+   - File processing routes
+   - Weaviate interaction endpoints
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+3. **Integration Layer**:
+   - Ollama client for LLM access
+   - Weaviate client for vector storage
+   - RAG utilities for context retrieval
+
+## Development
+
+The application follows strict coding guidelines:
+- TypeScript for type safety
+- Tailwind CSS for styling
+- Accessibility-first components
+- DRY principles and clean code practices
+
+## Contributing
+
+Contributions are welcome! Please read our contributing guidelines before submitting pull requests.
+
+## License
+
+MIT
