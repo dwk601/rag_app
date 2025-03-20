@@ -20,11 +20,10 @@ const ChatContainer = () => {
   }, []);
 
   // Format date in a consistent way for both server and client
-  const formatDate = (dateString: string) => {
+  const formatDate = (date: Date) => {
     if (!isClient) return '';
-    
+
     try {
-      const date = new Date(dateString);
       return date.toLocaleDateString(undefined, {
         year: 'numeric',
         month: 'short',
@@ -55,8 +54,8 @@ const ChatContainer = () => {
             <TabsTrigger value="chat">Chat</TabsTrigger>
             <TabsTrigger value="files">Files</TabsTrigger>
           </TabsList>
-          
-          <TabsContent 
+
+          <TabsContent
             value="chat"
             className="flex-1 flex flex-col h-[calc(100%-48px)]"
           >
@@ -64,14 +63,14 @@ const ChatContainer = () => {
               <MessageList messages={messages} loading={isLoading} />
             </div>
             <div className="p-4 border-t">
-              <MessageInput 
+              <MessageInput
                 onSendMessage={actions.sendMessage}
                 isLoading={isLoading}
               />
             </div>
           </TabsContent>
-          
-          <TabsContent 
+
+          <TabsContent
             value="files"
             className="h-[calc(100%-48px)] overflow-y-auto p-4"
           >
