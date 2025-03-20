@@ -94,6 +94,11 @@ Follow these rules when you write code:
 │   ├── layout.tsx
 │   └── page.tsx
 ├── components
+│   ├── chat
+│   │   ├── ChatContainer.tsx
+│   │   ├── ChatMessage.tsx
+│   │   ├── MessageInput.tsx
+│   │   └── MessageList.tsx
 │   └── ui
 │       ├── avatar.tsx
 │       ├── button.tsx
