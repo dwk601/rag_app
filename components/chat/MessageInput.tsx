@@ -1,16 +1,21 @@
 import { useState, FormEvent, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Send } from "lucide-react";
+import { Send, AlertCircle } from "lucide-react";
 import { v4 as uuidv4 } from 'uuid';
 import FileUpload, { FileWithPreview } from "./FileUpload";
 
 type MessageInputProps = {
   onSendMessage: (content: string, files?: File[]) => void;
   isLoading?: boolean;
+  isDisabled?: boolean;
 };
 
-const MessageInput = ({ onSendMessage, isLoading = false }: MessageInputProps) => {
+const MessageInput = ({ 
+  onSendMessage, 
+  isLoading = false, 
+  isDisabled = false 
+}: MessageInputProps) => {
   const [message, setMessage] = useState("");
   const [files, setFiles] = useState<FileWithPreview[]>([]);
   const [uploadStatus, setUploadStatus] = useState<"idle" | "uploading" | "error">("idle");
@@ -19,6 +24,7 @@ const MessageInput = ({ onSendMessage, isLoading = false }: MessageInputProps) =
     e.preventDefault();
     
     if (!message.trim() && files.length === 0) return;
+    if (isDisabled || isLoading) return;
     
     onSendMessage(message, files.length > 0 ? files : undefined);
     setMessage("");
@@ -60,36 +66,51 @@ const MessageInput = ({ onSendMessage, isLoading = false }: MessageInputProps) =
   }, []);
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col space-y-2">
-      <FileUpload 
-        files={files}
-        onFileSelect={handleFileSelect}
-        onFileRemove={handleFileRemove}
-        isUploading={isLoading || uploadStatus === "uploading"}
-      />
+    <div>
+      {isDisabled && (
+        <div className="flex items-center mb-2 p-2 bg-amber-50 text-amber-800 rounded-md">
+          <AlertCircle className="h-4 w-4 mr-2 flex-shrink-0" />
+          <p className="text-sm">
+            Services are not available. Please check the health indicator above or try again later.
+          </p>
+        </div>
+      )}
       
-      <div className="flex items-end gap-2">
-        <Textarea
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Type your message..."
-          className="min-h-[80px] resize-none flex-1"
-          disabled={isLoading}
-          rows={3}
+      <form onSubmit={handleSubmit} className="flex flex-col space-y-2">
+        <FileUpload 
+          files={files}
+          onFileSelect={handleFileSelect}
+          onFileRemove={handleFileRemove}
+          isUploading={isLoading || uploadStatus === "uploading"}
+          disabled={isDisabled}
         />
         
-        <Button
-          type="submit"
-          size="icon"
-          disabled={isLoading || (message.trim() === "" && files.length === 0)}
-          className="rounded-full h-10 w-10"
-          aria-label="Send message"
-        >
-          <Send className="h-4 w-4" />
-        </Button>
-      </div>
-    </form>
+        <div className="flex items-end gap-2">
+          <Textarea
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder={isDisabled 
+              ? "Services unavailable..." 
+              : "Type your message..."
+            }
+            className="min-h-[80px] resize-none flex-1"
+            disabled={isLoading || isDisabled}
+            rows={3}
+          />
+          
+          <Button
+            type="submit"
+            size="icon"
+            disabled={isLoading || isDisabled || (message.trim() === "" && files.length === 0)}
+            className="rounded-full h-10 w-10"
+            aria-label="Send message"
+          >
+            <Send className="h-4 w-4" />
+          </Button>
+        </div>
+      </form>
+    </div>
   );
 };
 
