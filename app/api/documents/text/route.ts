@@ -19,7 +19,31 @@ interface TextProcessRequest {
  */
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json() as TextProcessRequest;
+    // Check content type
+    const contentType = request.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      return NextResponse.json(
+        { error: 'Content type must be application/json' },
+        { status: 415 }
+      );
+    }
+
+    // Safely parse JSON
+    let body: TextProcessRequest;
+    try {
+      const text = await request.text();
+      body = JSON.parse(text) as TextProcessRequest;
+    } catch (parseError) {
+      console.error('JSON parse error:', parseError);
+      return NextResponse.json(
+        { 
+          error: 'Invalid JSON in request body',
+          details: parseError instanceof Error ? parseError.message : String(parseError)
+        },
+        { status: 400 }
+      );
+    }
+
     const { text, title, description } = body;
     
     // Validate input

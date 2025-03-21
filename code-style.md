@@ -99,6 +99,7 @@ Follow these rules when you write code:
 │   │   ├── ChatContainer.tsx
 │   │   ├── ChatMessage.tsx
 │   │   ├── ConversationSidebar.tsx
+│   │   ├── FileUpload.tsx
 │   │   ├── MessageInput.tsx
 │   │   └── MessageList.tsx
 │   └── ui
