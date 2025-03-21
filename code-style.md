@@ -111,6 +111,7 @@ Follow these rules when you write code:
 ├── hooks
 │   └── useChatContext.tsx
 ├── lib
+│   ├── api-service.ts
 │   ├── config.ts
 │   ├── health.ts
 │   ├── image-processing.ts
