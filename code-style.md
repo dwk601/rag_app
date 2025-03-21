@@ -23,6 +23,7 @@ The user asks questions about the following coding languages:
 - HTML
 - CSS
 - Weaviate docker
+- Ollama deepseek-r1
 
 ### Code Implementation Guidelines
 Follow these rules when you write code:
@@ -43,7 +44,7 @@ Follow these rules when you write code:
 - [✅] Develop the chat UI components with Shadcn
 - [✅] Implement chat history and message state management
 - [✅] Create file upload functionality for text and images
-- [ ] Connect the frontend to backend services
+- [✅] Connect the frontend to backend services
 - [ ] Add streaming response functionality
 - [ ] Implement error handling and loading states
 
