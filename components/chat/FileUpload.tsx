@@ -16,6 +16,7 @@ interface FileUploadProps {
   maxFiles?: number;
   files: FileWithPreview[];
   isUploading?: boolean;
+  disabled?: boolean;
 }
 
 const DEFAULT_MAX_SIZE = 5 * 1024 * 1024; // 5MB
@@ -28,7 +29,8 @@ const FileUpload = ({
   maxSize = DEFAULT_MAX_SIZE,
   maxFiles = 10,
   files,
-  isUploading = false
+  isUploading = false,
+  disabled = false
 }: FileUploadProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
@@ -61,6 +63,7 @@ const FileUpload = ({
   };
 
   const handleClick = () => {
+    if (disabled || isUploading) return;
     fileInputRef.current?.click();
   };
 
@@ -68,6 +71,11 @@ const FileUpload = ({
     const isImage = file.type.startsWith('image/');
     return isImage ? <ImageIcon className="h-4 w-4" /> : <FileText className="h-4 w-4" />;
   };
+
+  // Don't render the component when disabled and no files are selected
+  if (disabled && files.length === 0) {
+    return null;
+  }
 
   return (
     <div className="w-full">
@@ -79,7 +87,7 @@ const FileUpload = ({
         className="hidden"
         multiple
         accept={acceptedTypes}
-        disabled={isUploading}
+        disabled={isUploading || disabled}
         aria-label="Upload files"
       />
       
@@ -89,7 +97,7 @@ const FileUpload = ({
         variant="outline"
         size="sm"
         onClick={handleClick}
-        disabled={isUploading || files.length >= maxFiles}
+        disabled={isUploading || disabled || files.length >= maxFiles}
         className="relative"
         aria-label="Select files to upload"
       >
@@ -122,7 +130,7 @@ const FileUpload = ({
                 size="icon"
                 className="h-4 w-4 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                 onClick={() => onFileRemove(file)}
-                disabled={isUploading}
+                disabled={isUploading || disabled}
                 aria-label={`Remove file ${file.name}`}
               >
                 <X className="h-3 w-3" />
