@@ -47,10 +47,12 @@ export async function checkServicesHealth(): Promise<ServiceHealth> {
     }
   }
   
+  // Consider services healthy if both Weaviate and Ollama are available
+  // Not requiring schema initialization allows for first-time use
   return {
     weaviate: weaviateHealth,
     ollama: ollamaHealth,
     schema: schemaStatus,
-    allHealthy: weaviateHealth && ollamaHealth && schemaStatus.initialized
+    allHealthy: weaviateHealth && ollamaHealth // Schema can be initialized later if needed
   };
 }
