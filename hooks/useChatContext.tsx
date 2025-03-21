@@ -3,6 +3,8 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { MessageType } from '@/components/chat/ChatMessage';
+import * as apiService from '@/lib/api-service';
+import { toast } from 'sonner';
 
 // Define uploaded file type
 export type UploadedFileType = {
@@ -27,6 +29,7 @@ export interface ChatState {
     messageIds: string[];
   }[];
   isInitialized: boolean;
+  servicesReady: boolean;
 }
 
 // Define context actions
@@ -37,6 +40,7 @@ export interface ChatContextActions {
   switchConversation: (conversationId: string) => void;
   deleteConversation: (conversationId: string) => void;
   renameConversation: (conversationId: string, newTitle: string) => void;
+  checkServices: () => Promise<boolean>;
 }
 
 // Create the context with an empty default value
@@ -68,8 +72,63 @@ export const ChatProvider = ({ children }: ChatProviderProps) => {
     uploadedFiles: [],
     activeConversationId: null,
     conversations: [],
-    isInitialized: false
+    isInitialized: false,
+    servicesReady: false
   });
+
+  // Check the health of services
+  const checkServices = useCallback(async () => {
+    try {
+      // First try the primary health check
+      const health = await apiService.checkServicesHealth();
+      
+      setState(prev => ({ 
+        ...prev, 
+        servicesReady: health.allHealthy 
+      }));
+
+      // If primary health check fails completely, try direct service checks
+      if (!health.allHealthy) {
+        const directHealth = await apiService.checkDirectServiceHealth();
+        
+        // If direct checks indicate services are actually running, consider them ready
+        if (directHealth.ollama) {
+          setState(prev => ({ ...prev, servicesReady: true }));
+          return true;
+        }
+      }
+
+      // If schema is not initialized but services are available, try to initialize it
+      if (health.weaviate && health.ollama && !health.schema.initialized) {
+        const initialized = await apiService.initializeSchema();
+        if (initialized) {
+          toast.success("Schema initialized successfully");
+          setState(prev => ({ ...prev, servicesReady: true }));
+          return true;
+        } else {
+          toast.error("Failed to initialize schema");
+        }
+      }
+      
+      return health.allHealthy;
+    } catch (error) {
+      console.error('Error checking services:', error);
+      
+      // Last resort: try direct checks when the main health check throws an error
+      try {
+        const directHealth = await apiService.checkDirectServiceHealth();
+        if (directHealth.ollama) {
+          setState(prev => ({ ...prev, servicesReady: true }));
+          return true;
+        }
+      } catch (fallbackError) {
+        console.error('Fallback health check also failed:', fallbackError);
+      }
+      
+      setState(prev => ({ ...prev, servicesReady: false }));
+      return false;
+    }
+  }, []);
 
   // Load data from local storage on mount, but only on client side
   useEffect(() => {
@@ -123,7 +182,8 @@ export const ChatProvider = ({ children }: ChatProviderProps) => {
           uploadedFiles,
           activeConversationId: newConversation.id,
           conversations: [newConversation],
-          isInitialized: true
+          isInitialized: true,
+          servicesReady: false
         });
       } else {
         // Use saved data
@@ -133,9 +193,13 @@ export const ChatProvider = ({ children }: ChatProviderProps) => {
           uploadedFiles,
           activeConversationId: activeConversationId || conversations[0].id,
           conversations,
-          isInitialized: true
+          isInitialized: true,
+          servicesReady: false
         });
       }
+      
+      // Check services health on startup
+      checkServices();
     } catch (error) {
       console.error('Error loading chat state from localStorage:', error);
       // Start with a fresh state if there's an error
@@ -153,10 +217,11 @@ export const ChatProvider = ({ children }: ChatProviderProps) => {
         uploadedFiles: [],
         activeConversationId: newConversation.id,
         conversations: [newConversation],
-        isInitialized: true
+        isInitialized: true,
+        servicesReady: false
       });
     }
-  }, []);
+  }, [checkServices]);
 
   // Save state to localStorage whenever it changes, but only on client side
   useEffect(() => {
@@ -182,6 +247,15 @@ export const ChatProvider = ({ children }: ChatProviderProps) => {
   // Functions to manipulate state
   const sendMessage = useCallback(async (content: string, files?: File[]) => {
     if (!state.activeConversationId) return;
+    
+    // Check services health before proceeding
+    if (!state.servicesReady) {
+      const servicesOk = await checkServices();
+      if (!servicesOk) {
+        toast.error("Services are not ready. Please try again later.");
+        return;
+      }
+    }
     
     // Create user message
     const userMessageId = uuidv4();
@@ -222,96 +296,67 @@ export const ChatProvider = ({ children }: ChatProviderProps) => {
       // Handle file uploads if any
       if (files && files.length > 0) {
         for (const file of files) {
-          const isImage = file.type.startsWith("image/");
-          const endpoint = isImage
-            ? "/api/documents/images"
-            : "/api/documents/text";
-
-          const formData = new FormData();
-          formData.append("file", file);
-
-          const response = await fetch(endpoint, {
-            method: "POST",
-            body: formData,
-          });
-
-          if (!response.ok) {
-            throw new Error(`Failed to upload ${file.name}`);
-          }
-
-          const data = await response.json();
-          
-          // Generate unique file ID
-          const fileId = uuidv4();
-          
-          // Add to uploaded files list
-          setState(prev => {
-            const newFile: UploadedFileType = {
-              id: fileId,
-              name: file.name,
-              type: file.type,
-              url: data.url || "",
-              uploadedAt: new Date()
-            };
+          try {
+            const fileData = await apiService.uploadFile(file);
             
-            return {
-              ...prev,
-              uploadedFiles: [...prev.uploadedFiles, newFile]
-            };
-          });
-          
-          // Add upload confirmation to chat
-          const confirmationId = uuidv4();
-          const confirmationMessage: MessageType = {
-            id: confirmationId,
-            content: `File "${file.name}" uploaded and processed successfully.`,
-            role: "assistant",
-            createdAt: new Date()
-          };
-          
-          setState(prev => {
-            const updatedConversations = prev.conversations.map(conv => {
-              if (conv.id === prev.activeConversationId) {
-                return {
-                  ...conv,
-                  messageIds: [...conv.messageIds, confirmationId],
-                  updatedAt: new Date(),
-                };
-              }
-              return conv;
+            // Generate unique file ID
+            const fileId = uuidv4();
+            
+            // Add to uploaded files list
+            setState(prev => {
+              const newFile: UploadedFileType = {
+                id: fileId,
+                name: file.name,
+                type: file.type,
+                url: fileData.url || "",
+                uploadedAt: new Date()
+              };
+              
+              return {
+                ...prev,
+                uploadedFiles: [...prev.uploadedFiles, newFile]
+              };
             });
             
-            return {
-              ...prev,
-              messages: [...prev.messages, confirmationMessage],
-              conversations: updatedConversations,
+            // Add upload confirmation to chat
+            const confirmationId = uuidv4();
+            const confirmationMessage: MessageType = {
+              id: confirmationId,
+              content: `File "${file.name}" uploaded and processed successfully.`,
+              role: "assistant",
+              createdAt: new Date()
             };
-          });
+            
+            setState(prev => {
+              const updatedConversations = prev.conversations.map(conv => {
+                if (conv.id === prev.activeConversationId) {
+                  return {
+                    ...conv,
+                    messageIds: [...conv.messageIds, confirmationId],
+                    updatedAt: new Date(),
+                  };
+                }
+                return conv;
+              });
+              
+              return {
+                ...prev,
+                messages: [...prev.messages, confirmationMessage],
+                conversations: updatedConversations,
+              };
+            });
+          } catch (error) {
+            console.error(`Error uploading file ${file.name}:`, error);
+            toast.error(`Failed to upload ${file.name}`);
+          }
         }
       }
 
       // Only proceed with chat completion if there's a message
       if (content.trim()) {
-        // Create AI response by calling the streaming endpoint
-        const response = await fetch("/api/chat/streaming", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            message: content,
-          }),
-        });
-
-        if (!response.ok || !response.body) {
-          throw new Error("Failed to get streaming response");
-        }
-
-        // Setup for streaming
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let responseText = "";
+        // Prepare for streaming response
         const responseId = uuidv4();
+        let responseText = "";
 
         // Add initial empty message for streaming
         setState(prev => {
@@ -340,30 +385,40 @@ export const ChatProvider = ({ children }: ChatProviderProps) => {
           };
         });
 
-        // Process the stream
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          // Decode chunk and append to response text
-          const chunk = decoder.decode(value, { stream: true });
-          responseText += chunk;
-
-          // Update the message with the current accumulated text
-          setState(prev => ({
-            ...prev,
-            messages: prev.messages.map(msg =>
-              msg.id === responseId
-                ? { ...msg, content: responseText }
-                : msg
-            )
-          }));
-        }
+        // Get previous messages for context
+        const activeConversation = state.conversations.find(conv => conv.id === state.activeConversationId);
+        const conversationMessages = activeConversation 
+          ? state.messages.filter(msg => activeConversation.messageIds.includes(msg.id)) 
+          : [];
+        
+        // Send message and process streaming response
+        await apiService.sendStreamingChatMessage(
+          content, 
+          conversationMessages,
+          true, // useRAG
+          (chunk) => {
+            // Update the response text with each chunk
+            responseText += chunk;
+            
+            // Update message in state
+            setState(prev => ({
+              ...prev,
+              messages: prev.messages.map(msg =>
+                msg.id === responseId
+                  ? { ...msg, content: responseText }
+                  : msg
+              )
+            }));
+          }
+        );
       }
     } catch (error) {
       console.error("Error in chat:", error);
       
-      // Add error message
+      // Show error toast
+      toast.error("An error occurred while processing your request");
+      
+      // Add error message to chat
       const errorId = uuidv4();
       const errorMessage: MessageType = {
         id: errorId,
@@ -397,7 +452,7 @@ export const ChatProvider = ({ children }: ChatProviderProps) => {
         isLoading: false,
       }));
     }
-  }, [state.activeConversationId, state.conversations]);
+  }, [state.activeConversationId, state.conversations, state.messages, state.servicesReady, checkServices]);
 
   // Clear the current conversation
   const clearConversation = useCallback(() => {
@@ -525,6 +580,7 @@ export const ChatProvider = ({ children }: ChatProviderProps) => {
     switchConversation,
     deleteConversation,
     renameConversation,
+    checkServices,
   };
 
   return (
