@@ -6,23 +6,33 @@ import MessageInput from "./MessageInput";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState, useEffect } from "react";
 import ConversationSidebar from "./ConversationSidebar";
+import Image from "next/image";
+import dynamic from 'next/dynamic';
 
+// Create a client-only wrapper for date-specific components
+const ClientOnly = ({ children }: { children: React.ReactNode }) => {
+  const [hasMounted, setHasMounted] = useState(false);
+  
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
+  
+  if (!hasMounted) {
+    return null;
+  }
+  
+  return <>{children}</>;
+};
+
+// The main component
 const ChatContainer = () => {
   const { messages, isLoading } = useActiveConversation();
   const { state, actions } = useChatContext();
   const { uploadedFiles } = state;
   const [activeTab, setActiveTab] = useState<"chat" | "files">("chat");
-  const [isClient, setIsClient] = useState(false);
 
-  // Set isClient to true after component mounts to prevent hydration mismatch
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
-
-  // Format date in a consistent way for both server and client
+  // Format date in a consistent way for client-side only
   const formatDate = (date: Date) => {
-    if (!isClient) return '';
-
     try {
       return date.toLocaleDateString(undefined, {
         year: 'numeric',
@@ -34,6 +44,14 @@ const ChatContainer = () => {
     } catch (error) {
       return '';
     }
+  };
+
+  // Handle file upload when new files come from MessageInput
+  const handleSendMessage = async (content: string, files?: File[]) => {
+    await actions.sendMessage(content, files);
+    
+    // Switch to chat tab after sending
+    setActiveTab("chat");
   };
 
   return (
@@ -52,7 +70,9 @@ const ChatContainer = () => {
         >
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="chat">Chat</TabsTrigger>
-            <TabsTrigger value="files">Files</TabsTrigger>
+            <TabsTrigger value="files">
+              Files {uploadedFiles.length > 0 && `(${uploadedFiles.length})`}
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent
@@ -64,7 +84,7 @@ const ChatContainer = () => {
             </div>
             <div className="p-4 border-t">
               <MessageInput
-                onSendMessage={actions.sendMessage}
+                onSendMessage={handleSendMessage}
                 isLoading={isLoading}
               />
             </div>
@@ -87,25 +107,34 @@ const ChatContainer = () => {
                     key={file.id}
                     className="border rounded-lg p-3 flex flex-col gap-2"
                   >
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-center h-32 bg-muted rounded">
                       {file.type.startsWith("image/") ? (
-                        <img
-                          src={file.url}
-                          alt={file.name}
-                          className="w-full h-32 object-cover rounded"
-                        />
+                        file.url ? (
+                          <div className="relative w-full h-full">
+                            <Image
+                              src={file.url}
+                              alt={file.name}
+                              fill
+                              className="object-cover rounded"
+                              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                            />
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground">Image preview unavailable</span>
+                        )
                       ) : (
-                        <div className="w-full h-32 bg-muted flex items-center justify-center rounded">
-                          <span className="text-muted-foreground">{file.type}</span>
+                        <div className="flex flex-col items-center justify-center">
+                          <span className="text-muted-foreground mb-1">{file.type || "Unknown type"}</span>
+                          <span className="text-sm font-medium">{file.name}</span>
                         </div>
                       )}
                     </div>
                     <p className="text-sm font-medium truncate">{file.name}</p>
-                    {isClient && (
+                    <ClientOnly>
                       <p className="text-xs text-muted-foreground">
                         {formatDate(file.uploadedAt)}
                       </p>
-                    )}
+                    </ClientOnly>
                   </div>
                 ))}
               </div>
@@ -117,4 +146,7 @@ const ChatContainer = () => {
   );
 };
 
-export default ChatContainer;
+// Export as a dynamic component with SSR disabled
+export default dynamic(() => Promise.resolve(ChatContainer), {
+  ssr: false
+});

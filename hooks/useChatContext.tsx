@@ -26,6 +26,7 @@ export interface ChatState {
     updatedAt: Date;
     messageIds: string[];
   }[];
+  isInitialized: boolean;
 }
 
 // Define context actions
@@ -56,18 +57,24 @@ export interface ChatProviderProps {
   children: ReactNode;
 }
 
+// Helper to check if we're on the client side
+const isClient = typeof window !== 'undefined';
+
 export const ChatProvider = ({ children }: ChatProviderProps) => {
-  // Initialize state
+  // Initialize state with empty values to avoid hydration issues
   const [state, setState] = useState<ChatState>({
     messages: [],
     isLoading: false,
     uploadedFiles: [],
     activeConversationId: null,
     conversations: [],
+    isInitialized: false
   });
 
-  // Load data from local storage on mount
+  // Load data from local storage on mount, but only on client side
   useEffect(() => {
+    if (!isClient) return;
+
     try {
       // Load conversations
       const savedConversations = localStorage.getItem(STORAGE_KEYS.CONVERSATIONS);
@@ -116,6 +123,7 @@ export const ChatProvider = ({ children }: ChatProviderProps) => {
           uploadedFiles,
           activeConversationId: newConversation.id,
           conversations: [newConversation],
+          isInitialized: true
         });
       } else {
         // Use saved data
@@ -125,6 +133,7 @@ export const ChatProvider = ({ children }: ChatProviderProps) => {
           uploadedFiles,
           activeConversationId: activeConversationId || conversations[0].id,
           conversations,
+          isInitialized: true
         });
       }
     } catch (error) {
@@ -139,15 +148,20 @@ export const ChatProvider = ({ children }: ChatProviderProps) => {
       };
       
       setState({
-        ...state,
+        messages: [],
+        isLoading: false,
+        uploadedFiles: [],
         activeConversationId: newConversation.id,
         conversations: [newConversation],
+        isInitialized: true
       });
     }
   }, []);
 
-  // Save state to localStorage whenever it changes
+  // Save state to localStorage whenever it changes, but only on client side
   useEffect(() => {
+    if (!isClient || !state.isInitialized) return;
+    
     if (state.conversations.length > 0) {
       localStorage.setItem(STORAGE_KEYS.CONVERSATIONS, JSON.stringify(state.conversations));
     }
@@ -534,7 +548,7 @@ export const useChatContext = () => {
 // Utility hook to get active conversation messages
 export const useActiveConversation = () => {
   const { state } = useChatContext();
-  const { activeConversationId, conversations, messages } = state;
+  const { activeConversationId, conversations, messages, isLoading } = state;
   
   // Get the active conversation
   const activeConversation = conversations.find(conv => conv.id === activeConversationId);
@@ -547,6 +561,6 @@ export const useActiveConversation = () => {
   return {
     conversation: activeConversation,
     messages: activeMessages,
-    isLoading: state.isLoading,
+    isLoading,
   };
 };

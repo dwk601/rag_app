@@ -22,6 +22,7 @@ The user asks questions about the following coding languages:
 - Shadcn UI shadcn@2.3.0
 - HTML
 - CSS
+- Weaviate docker
 
 ### Code Implementation Guidelines
 Follow these rules when you write code:
@@ -41,7 +42,7 @@ Follow these rules when you write code:
 - [✅] Build image processing and embedding capabilities
 - [✅] Develop the chat UI components with Shadcn
 - [✅] Implement chat history and message state management
-- [ ] Create file upload functionality for text and images
+- [✅] Create file upload functionality for text and images
 - [ ] Connect the frontend to backend services
 - [ ] Add streaming response functionality
 - [ ] Implement error handling and loading states
