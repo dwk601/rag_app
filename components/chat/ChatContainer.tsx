@@ -8,6 +8,9 @@ import { useState, useEffect } from "react";
 import ConversationSidebar from "./ConversationSidebar";
 import Image from "next/image";
 import dynamic from 'next/dynamic';
+import { toast } from "sonner";
+import { Button } from "../ui/button";
+import { AlertCircle, CheckCircle2, RefreshCw } from "lucide-react";
 
 // Create a client-only wrapper for date-specific components
 const ClientOnly = ({ children }: { children: React.ReactNode }) => {
@@ -28,8 +31,9 @@ const ClientOnly = ({ children }: { children: React.ReactNode }) => {
 const ChatContainer = () => {
   const { messages, isLoading } = useActiveConversation();
   const { state, actions } = useChatContext();
-  const { uploadedFiles } = state;
+  const { uploadedFiles, servicesReady } = state;
   const [activeTab, setActiveTab] = useState<"chat" | "files">("chat");
+  const [checkingServices, setCheckingServices] = useState(false);
 
   // Format date in a consistent way for client-side only
   const formatDate = (date: Date) => {
@@ -54,6 +58,23 @@ const ChatContainer = () => {
     setActiveTab("chat");
   };
 
+  // Handle service health check
+  const handleCheckServices = async () => {
+    setCheckingServices(true);
+    try {
+      const result = await actions.checkServices();
+      if (result) {
+        toast.success("All services are running properly");
+      } else {
+        toast.error("Some services are not available. Check the health indicator for details.");
+      }
+    } catch (error) {
+      toast.error("Failed to check services");
+    } finally {
+      setCheckingServices(false);
+    }
+  };
+
   return (
     <div className="flex h-[calc(100vh-80px)]">
       {/* Sidebar with conversation history */}
@@ -63,6 +84,42 @@ const ChatContainer = () => {
 
       {/* Main chat interface */}
       <div className="flex-1 flex flex-col h-full">
+        {/* Service health indicator */}
+        <div className="px-4 py-2 border-b flex justify-between items-center">
+          <div className="flex items-center">
+            <span className="mr-2">Services:</span>
+            {servicesReady ? (
+              <span className="flex items-center text-green-600">
+                <CheckCircle2 className="h-4 w-4 mr-1" />
+                <span>Ready</span>
+              </span>
+            ) : (
+              <span className="flex items-center text-amber-600">
+                <AlertCircle className="h-4 w-4 mr-1" />
+                <span>Not Ready</span>
+              </span>
+            )}
+          </div>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleCheckServices} 
+            disabled={checkingServices}
+          >
+            {checkingServices ? (
+              <>
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                Checking...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Refresh
+              </>
+            )}
+          </Button>
+        </div>
+        
         <Tabs
           value={activeTab}
           onValueChange={(value) => setActiveTab(value as "chat" | "files")}
@@ -86,6 +143,7 @@ const ChatContainer = () => {
               <MessageInput
                 onSendMessage={handleSendMessage}
                 isLoading={isLoading}
+                isDisabled={!servicesReady}
               />
             </div>
           </TabsContent>
